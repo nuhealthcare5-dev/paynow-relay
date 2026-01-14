@@ -1,9 +1,14 @@
 {
   "name": "paynow-relay",
   "version": "1.0.0",
+  "description": "Secure Paynow relay for Lovable payments",
   "main": "index.cjs",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.cjs"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "express": "^4.19.2",
