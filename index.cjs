@@ -15,13 +15,13 @@ if (!process.env.PAYNOW_INTEGRATION_ID || !process.env.PAYNOW_INTEGRATION_KEY) {
   process.exit(1);
 }
 
-// ✅ CORRECT PAYNOW INITIALIZATION (THIS IS THE FIX)
-const paynow = Paynow.createPaynow(
+// ✅ CORRECT PAYNOW INIT (THIS IS THE FIX)
+const paynow = Paynow(
   process.env.PAYNOW_INTEGRATION_ID,
   process.env.PAYNOW_INTEGRATION_KEY
 );
 
-// ✅ HEALTH
+// HEALTH CHECK
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -31,13 +31,13 @@ app.get("/health", (req, res) => {
   });
 });
 
-// 💳 CREATE PAYMENT
+// CREATE PAYMENT
 app.post("/create-payment", async (req, res) => {
   try {
     const { email, amount, reference } = req.body;
 
     if (!email || !amount || !reference) {
-      return res.status(400).json({ error: "Missing fields" });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     const payment = paynow.createPayment(reference, email);
