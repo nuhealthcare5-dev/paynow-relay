@@ -1,76 +1,60 @@
 import express from "express";
-import cors from "cors";
-import { Paynow } from "paynow";
+import Paynow from "paynow";
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-const {
-  PAYNOW_INTEGRATION_ID,
-  PAYNOW_INTEGRATION_KEY,
-  RELAY_SECRET,
-  PORT = 3000,
-} = process.env;
-
-console.log("ENV CHECK:", {
-  PAYNOW_INTEGRATION_ID: !!PAYNOW_INTEGRATION_ID,
-  PAYNOW_INTEGRATION_KEY: !!PAYNOW_INTEGRATION_KEY,
-  RELAY_SECRET: !!RELAY_SECRET,
-});
-
-if (!PAYNOW_INTEGRATION_ID || !PAYNOW_INTEGRATION_KEY || !RELAY_SECRET) {
-  console.error("❌ ENV VARS MISSING");
-  process.exit(1);
-}
-
-/* ✅ CORRECT PAYNOW INITIALIZATION */
 const paynow = new Paynow(
-  PAYNOW_INTEGRATION_ID,
-  PAYNOW_INTEGRATION_KEY
+  process.env.PAYNOW_INTEGRATION_ID,
+  process.env.PAYNOW_INTEGRATION_KEY
 );
 
-console.log("✅ Paynow initialized successfully");
-
-/* ---------- HEALTH CHECK ---------- */
-app.get("/health", (_req, res) => {
-  res.status(200).json({
+// 🔐 Health check
+app.get("/health", (req, res) => {
+  res.json({
     status: "ok",
     service: "paynow-relay",
     paynowReady: true,
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString()
   });
 });
 
-/* ---------- CREATE PAYMENT ---------- */
+// 💳 Create payment
 app.post("/create-payment", async (req, res) => {
   try {
-    const { amount, email, reference } = req.body;
+    const { email, amount, reference } = req.body;
 
-    if (!amount || !email || !reference) {
+    if (!email || !amount || !reference) {
       return res.status(400).json({ error: "Missing payment fields" });
     }
 
     const payment = paynow.createPayment(reference, email);
-    payment.add("Payment", amount);
+    payment.add(reference, amount);
 
     const response = await paynow.send(payment);
 
-    if (!response.success) {
-      return res.status(500).json({ error: "Paynow initiation failed" });
+    // ✅ CORRECT Paynow check
+    if (!response.success()) {
+      return res.status(500).json({
+        error: "Paynow rejected payment",
+      });
     }
 
-    res.json({
-      redirectUrl: response.redirectUrl,
-      pollUrl: response.pollUrl,
+    return res.json({
+      success: true,
+      redirectUrl: response.redirectUrl(),
+      pollUrl: response.pollUrl()
     });
+
   } catch (err) {
     console.error("❌ PAYMENT ERROR", err);
-    res.status(500).json({ error: "Internal payment error" });
+    return res.status(500).json({
+      error: "Internal payment error"
+    });
   }
 });
 
-/* ---------- START SERVER ---------- */
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Paynow relay running on port ${PORT}`);
+  console.log(`🚀 Paynow relay running on ${PORT}`);
 });
