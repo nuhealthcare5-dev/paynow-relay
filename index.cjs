@@ -1,15 +1,27 @@
 const express = require("express");
-const Paynow = require("paynow");
+const createPaynow = require("paynow");
 
 const app = express();
 app.use(express.json());
 
-const paynow = new Paynow(
+// ENV CHECK
+console.log("ENV CHECK:", {
+  PAYNOW_INTEGRATION_ID: !!process.env.PAYNOW_INTEGRATION_ID,
+  PAYNOW_INTEGRATION_KEY: !!process.env.PAYNOW_INTEGRATION_KEY
+});
+
+if (!process.env.PAYNOW_INTEGRATION_ID || !process.env.PAYNOW_INTEGRATION_KEY) {
+  console.error("❌ PAYNOW ENV VARS MISSING");
+  process.exit(1);
+}
+
+// ✅ CORRECT PAYNOW INITIALIZATION
+const paynow = createPaynow(
   process.env.PAYNOW_INTEGRATION_ID,
   process.env.PAYNOW_INTEGRATION_KEY
 );
 
-// ✅ Health check
+// ✅ HEALTH
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -19,7 +31,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// 💳 Create payment
+// 💳 CREATE PAYMENT
 app.post("/create-payment", async (req, res) => {
   try {
     const { email, amount, reference } = req.body;
@@ -34,6 +46,7 @@ app.post("/create-payment", async (req, res) => {
     const response = await paynow.send(payment);
 
     if (!response.success()) {
+      console.error("❌ PAYNOW REJECTED PAYMENT");
       return res.status(500).json({ error: "Paynow rejected payment" });
     }
 
@@ -50,6 +63,6 @@ app.post("/create-payment", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () =>
-  console.log(`🚀 Paynow relay running on ${PORT}`)
-);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Paynow relay running on port ${PORT}`);
+});
