@@ -1,5 +1,5 @@
 const express = require("express");
-const createPaynow = require("paynow");
+const Paynow = require("paynow");
 
 const app = express();
 app.use(express.json());
@@ -15,8 +15,8 @@ if (!process.env.PAYNOW_INTEGRATION_ID || !process.env.PAYNOW_INTEGRATION_KEY) {
   process.exit(1);
 }
 
-// ✅ CORRECT PAYNOW INITIALIZATION
-const paynow = createPaynow(
+// ✅ CORRECT PAYNOW INITIALIZATION (THIS IS THE FIX)
+const paynow = Paynow.createPaynow(
   process.env.PAYNOW_INTEGRATION_ID,
   process.env.PAYNOW_INTEGRATION_KEY
 );
