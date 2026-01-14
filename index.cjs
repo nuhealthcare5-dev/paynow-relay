@@ -1,5 +1,5 @@
 const express = require("express");
-const Paynow = require("paynow");
+const { Paynow } = require("paynow");
 
 const app = express();
 app.use(express.json());
@@ -14,13 +14,13 @@ if (!process.env.PAYNOW_INTEGRATION_ID || !process.env.PAYNOW_INTEGRATION_KEY) {
   process.exit(1);
 }
 
-// ✅ CORRECT PAYNOW INITIALIZATION
-const paynow = Paynow({
-  integrationId: process.env.PAYNOW_INTEGRATION_ID,
-  integrationKey: process.env.PAYNOW_INTEGRATION_KEY,
-});
+// ✅ THIS IS THE CORRECT INITIALIZATION
+const paynow = new Paynow(
+  process.env.PAYNOW_INTEGRATION_ID,
+  process.env.PAYNOW_INTEGRATION_KEY
+);
 
-// HEALTH CHECK
+// ✅ HEALTH CHECK
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -29,7 +29,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// CREATE PAYMENT
+// ✅ CREATE PAYMENT
 app.post("/create-payment", async (req, res) => {
   try {
     const { email, amount, reference } = req.body;
